@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자동 모드</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+
+        .card {
+            max-width: 90%;
+            margin: 40px auto;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            background-color: white;
+        }
+
+        .content-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .camera-container {
+            width: 48%; /* 카메라 컨테이너 너비 */
+            padding: 0 10px;
+        }
+
+        .sensor-container {
+            width: 48%; /* 센서 컨테이너 너비 */
+            padding: 0 10px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .input-row {
+            display: flex;
+            flex-direction: column; /* 세로 정렬로 변경 */
+            align-items: center; /* 중앙 정렬 */
+            margin-top: 20px;
+        }
+
+        .input-group {
+            margin: 10px; /* 그룹 간 여백 */
+            width: 80%; /* 그룹 너비 설정 */
+            max-width: 300px; /* 최대 너비 설정 */
+            display: flex;
+            flex-direction: column; /* 세로 정렬 */
+            align-items: center; /* 중앙 정렬 */
+        }
+
+        .input-group label {
+            text-align: center; /* 가운데 정렬 */
+            width: 100%; /* 라벨 너비 설정 */
+        }
+
+        .input-group input {
+            text-align: center; /* 입력란 가운데 정렬 */
+            width: 100%; /* 입력란 너비 설정 */
+        }
+
+        .sensor-data {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .sensor-item {
+            display: inline-block;
+            width: 45%;
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+
+        .sensor-item h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .sensor-item p {
+            font-size: 18px;
+            margin: 5px 0;
+            font-weight: normal;
+            color: #333;
+        }
+
+        .button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .content-row {
+                flex-direction: column;
+            }
+            .camera-container, .sensor-container {
+                width: 100%; /* 모바일에서는 전체 폭 사용 */
+            }
+        }
+    </style>
+
+    <script>
+        function fetchSensorData() {
+            $.getJSON('/sensor_data', function(data) {
+                $('#temperature').text(data.temperature);
+                $('#humidity').text(data.humidity);
+                $('#soil_moisture_status').text(getSoilMoistureStatus(data.soil_moisture));
+                $('#water_status').text(getWaterLevelStatus(data.water_level));
+            }).fail(function() {
+                console.error("센서 데이터 요청 실패");
+            });
+        }
+
+        function getSoilMoistureStatus(moisture) {
+            if (moisture < 200) {
+                return "수분 부족";
+            } else if (moisture < 500) {
+                return "수분 중간";
+            } else {
+                return "수분 충분";
+            }
+        }
+
+        function getWaterLevelStatus(level) {
+            if (level < 400) {
+                return "수위 낮음";
+            } else if (level < 700) {
+                return "수위 중간";
+            } else {
+                return "수위 높음";
+            }
+        }
+
+        $(document).ready(function() {
+            fetchSensorData(); // 초기 데이터 가져오기
+            setInterval(fetchSensorData, 1000); // 1초마다 데이터 가져오기
+        });
+
+        function validateInputs() {
+            const soilInput = document.getElementById('threshold_soil').value;
+            if (soilInput < 0 || soilInput > 100) {
+                alert("토양 수분 값은 0에서 100 사이여야 합니다.");
+                return false; // 폼 제출을 막음
+            }
+            return true; // 폼 제출 허용
+        }
+    </script>
+</head>
+
+<body>
+    <div class="card">
+        <h1>자동 모드</h1>
+        <div class="content-row">
+            <div class="camera-container">
+                <div class="section">
+                    <h2>농장 카메라</h2>
+                    <img src="http://172.16.200.109:8000/?action=stream" alt="농장 비디오 스트림" style="width: 100%; height: auto; border-radius: 5px;">
+                </div>
+            </div>
+
+            <div class="sensor-container">
+                <div class="section">
+                    <h2>설정 값</h2>
+                    <form method="POST" action="/auto" onsubmit="return validateInputs();">
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label for="threshold_temp">온도</label>
+                                <input type="number" name="threshold_temp" id="threshold_temp" placeholder="°C" required>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="threshold_humidity">습도</label>
+                                <input type="number" name="threshold_humidity" id="threshold_humidity" placeholder="%" required>
+                            </div>
+
+                            <div class="input-group">
+                                <label for="threshold_soil">토양 수분</label>
+                                <input type="number" name="threshold_soil" id="threshold_soil" placeholder="%" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="button">설정</button>
+                    </form>
+                </div>
+
+                <div class="section">
+                    <h2>설정된 값</h2>
+                    <div class="sensor-row">
+                        <div class="sensor-item">
+                            <h3>온도</h3>
+                            <p><span id="threshold_temp_display">{{ thresholds.temp }}</span> °C</p>
+                        </div>
+
+                        <div class="sensor-item">
+                            <h3>습도</h3>
+                            <p><span id="threshold_humidity_display">{{ thresholds.humidity }}</span> %</p>
+                        </div>
+
+                        <div class="sensor-item">
+                            <h3>토양 수분</h3>
+                            <p><span id="threshold_soil_display">{{ thresholds.soil }}</span> %</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sensor-data">
+                    <div class="section">
+                        <h2>농장 상태</h2>
+                        <div class="sensor-row">
+                            <div class="sensor-item">
+                                <h3>온도</h3>
+                                <p><span id="temperature">-</span> °C</p>
+                            </div>
+
+                            <div class="sensor-item">
+                                <h3>습도</h3>
+                                <p><span id="humidity">-</span> %</p>
+                            </div>
+                        </div>
+
+                        <div class="sensor-row">
+                            <div class="sensor-item">
+                                <h3>토양 수분</h3>
+                                <p><span id="soil_moisture_status">-</span></p>
+                            </div>
+
+                            <div class="sensor-item">
+                                <h3>수위 상태</h3>
+                                <p><span id="water_status">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="button-row">
+            <button class="button" onclick="window.location.href='/manual'">수동 모드로 이동</button>
+            <button class="button" onclick="window.location.href='/'">메인페이지로 이동</button>
+        </div>
+    </div>
+</body>
+
+</html>

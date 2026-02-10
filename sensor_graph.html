@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IOT SMART FARM</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+
+        .card {
+            max-width: 90%;
+            margin: 40px auto;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            background-color: white;
+        }
+
+        .content-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .camera-container, .sensor-container {
+            width: 48%; /* 컨테이너 너비 */
+            padding: 0 10px;
+            border: 1px solid #ddd; /* 박스 테두리 */
+            border-radius: 5px; /* 박스 모서리 둥글게 */
+            background-color: #fff; /* 박스 배경색을 하얀색으로 설정 */
+        }
+
+        .chart-box {
+            margin-bottom: 20px; /* 박스 간격 조정 */
+            padding: 15px;
+            border: 1px solid #ddd; /* 그래프 박스 테두리 */
+            border-radius: 5px; /* 그래프 박스 모서리 둥글게 */
+            background-color: #fff; /* 그래프 박스 배경색을 하얀색으로 설정 */
+        }
+
+        .button-row {
+            margin-top: 20px;
+        }
+
+        .button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .content-row {
+                flex-direction: column;
+            }
+            .camera-container, .sensor-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>IOT SMART FARM</h1>
+        <div class="content-row">
+            <div class="camera-container">
+                <h2>농장 카메라</h2>
+                <img src="http://172.16.200.109:8000/?action=stream" alt="농장 비디오 스트림" style="width: 100%; height: auto; border-radius: 5px;">
+            </div>
+
+            <div class="sensor-container">
+                <h2>농장 환경 그래프</h2>
+                <div class="chart-box">
+                    <canvas id="tempHumidityChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <canvas id="soilMoistureChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="button-row">
+            <button class="button" onclick="setMode('auto')">자동 모드</button>
+            <button class="button" onclick="setMode('manual')">수동 모드</button>
+        </div>
+    </div>
+
+    <script>
+        // 온도와 습도를 같은 그래프에 표시
+        const tempHumidityChart = new Chart(document.getElementById('tempHumidityChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: '온도 (°C)',
+                        data: [],
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        fill: true,
+                    },
+                    {
+                        label: '습도 (%)',
+                        data: [],
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: true,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '시간'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '값'
+                        },
+                        min: 10,
+                        max: 70,
+                        ticks: {
+                            callback: function(value) {
+                                return Math.floor(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 토양 수분 그래프
+        const soilMoistureChart = new Chart(document.getElementById('soilMoistureChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: '토양 수분 (%)',
+                    data: [],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '시간'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '값 (%)'
+                        },
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return Math.floor(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        function fetchSensorData() {
+            $.getJSON('/sensor_data', function(data) {
+                const currentTime = new Date().toLocaleTimeString();
+                
+                // 온도와 습도 그래프 데이터 추가
+                tempHumidityChart.data.labels.push(currentTime);
+                tempHumidityChart.data.datasets[0].data.push(Math.floor(data.temperature));
+                tempHumidityChart.data.datasets[1].data.push(Math.floor(data.humidity));
+
+                // 토양 수분 그래프 데이터 추가
+                const transformedSoilMoisture = (data.soil_moisture / 1023) * 100;
+                soilMoistureChart.data.labels.push(currentTime);
+                soilMoistureChart.data.datasets[0].data.push(Math.max(0, Math.min(100, transformedSoilMoisture)));
+
+                // 데이터 포인트 수가 10을 초과하면 가장 오래된 데이터 제거
+                if (tempHumidityChart.data.labels.length > 10) {
+                    tempHumidityChart.data.labels.shift();
+                    tempHumidityChart.data.datasets[0].data.shift();
+                    tempHumidityChart.data.datasets[1].data.shift();
+                }
+
+                if (soilMoistureChart.data.labels.length > 10) {
+                    soilMoistureChart.data.labels.shift();
+                    soilMoistureChart.data.datasets[0].data.shift();
+                }
+
+                // 그래프 업데이트
+                tempHumidityChart.update();
+                soilMoistureChart.update();
+            }).fail(function() {
+                console.error("센서 데이터 요청 실패");
+            });
+        }
+
+        // 모드 전환 함수
+        function setMode(mode) {
+            if (mode === 'auto') {
+                window.location.href = '/auto';
+            } else if (mode === 'manual') {
+                window.location.href = '/manual';
+            }
+        }
+
+        // 3초마다 센서 데이터 가져오기
+        setInterval(fetchSensorData, 3000);
+        fetchSensorData(); // 페이지 로드 시 데이터 가져오기
+    </script>
+</body>
+
+</html>
