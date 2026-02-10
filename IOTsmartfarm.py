@@ -265,7 +265,7 @@ if __name__ == '__main__':
         threading.Thread(target=update_lcd, daemon=True).start()
         
         # Flask 서버 시작
-        app.run(host='172.16.200.109', port=8080)
+        app.run(host='호스트 서버 IP', port=8080)
     finally:
         servo.stop()
         GPIO.cleanup()
