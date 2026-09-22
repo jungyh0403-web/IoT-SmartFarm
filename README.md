@@ -74,7 +74,7 @@ Raspberry Pi 기반 스마트 농장 자동화 시스템.
 ---
 
 ## 🧩 시스템 구조
-센서 데이터를 Raspberry Pi에서 수집하고,  
-Flask 웹 서버를 통해 데이터를 제공하며  
-웹 대시보드에서 실시간 모니터링 및 제어가 가능하도록 구성.
+
+![System Structure](system_structure.png)
+
 
