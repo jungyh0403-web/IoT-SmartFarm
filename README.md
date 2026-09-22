@@ -8,13 +8,13 @@
 
 ## 프로젝트 사진
 
-![System](main_system.jpg)
+![System Overview](main_system.jpg)
 
 ---
 
 ## 회로도
 
-![Circuit](circuit_diagram.png)
+![Circuit Diagram](circuit_diagram.png)
 
 ---
 
