@@ -6,6 +6,18 @@
 
 ---
 
+## 프로젝트 사진
+
+![System](media/main_system.jpg)
+
+---
+
+## 회로도
+
+![Circuit](media/circuit_diagram.png)
+
+---
+
 ## 📌 프로젝트 개요
 IoT SmartFarm은 농작물 재배 환경(온도, 습도, 토양 수분, 조도, 수위 등)을  
 실시간으로 모니터링하고, 설정된 조건에 따라 관수·환기·조명·개폐를 자동으로 제어하는  
